@@ -16,21 +16,21 @@
 #define EI_NIDENT 16
 
 typedef struct {
-	unsigned char e_ident[EI_NIDENT];
-	uint16_t      e_type;
-	uint16_t      e_machine;
-	uint32_t      e_version;
-	ElfN_Addr     e_entry;
-	ElfN_Off      e_phoff;
-	ElfN_Off      e_shoff;
-	uint32_t      e_flags;
-	uint16_t      e_ehsize;
-	uint16_t      e_phentsize;
-	uint16_t      e_phnum;
-	uint16_t      e_shentsize;
-	uint16_t      e_shnum;
-	uint16_t      e_shstrndx;
-} ElfN_Ehdr;
+unsigned char e_ident[EI_NIDENT];
+uint16_t      e_type;
+uint16_t      e_machine;
+uint32_t      e_version;
+ElfN_Addr     e_entry;
+ElfN_Off      e_phoff;
+ElfN_Off      e_shoff;
+uint32_t      e_flags;
+uint16_t      e_ehsize;
+uint16_t      e_phentsize;
+uint16_t      e_phnum;
+uint16_t      e_shentsize;
+uint16_t      e_shnum;
+uint16_t      e_shstrndx;
+} ElfN_Ehdr
 */
 
 /*
@@ -55,15 +55,64 @@ typedef struct {
 };
 */
 
+Elf64_Shdr	*get_section64(Elf64_Ehdr *hdr, uint16_t index)
+{
+	Elf64_Shdr *shdr;
+	int i;
+
+	shdr = (void *)hdr + hdr->e_shoff;
+	for(i = 0; i < hdr->e_shnum; ++i)
+	{
+		if (i == index)
+			return(shdr);
+		shdr = (void *)shdr + sizeof(Elf64_Shdr);
+	}
+	return (NULL);
+}
+
 void				print_all(void *ptr)
 {
-	int				i;
+	int		i;
+	Elf64_Ehdr	*hdr;
+	Elf64_Shdr	*shdr;
+	Elf64_Shdr	*sstr;
 
-	//	hdr = ptr;
+	hdr = ptr;
 	printf("Header:\n\te_ident: ");
 	for (i = 0; i < EI_NIDENT; ++i) {
-		printf("%02X ", ((Elf64_Ehdr *)ptr)->e_ident[i]);
+		printf("%02X ", hdr->e_ident[i]);
 	}
+	printf("\n\te_type: %hu (Object file type)", hdr->e_type);
+	printf("\n\te_machine: %hu (Machine type)", hdr->e_machine);
+	printf("\n\te_version: %u (Object file version)", hdr->e_version);
+	printf("\n\te_entry: %lu (Entry point address)", hdr->e_entry);
+	printf("\n\te_phoff: %lu (Program header offset)", hdr->e_phoff);
+	printf("\n\te_shoff: %lu (Section header offset)", hdr->e_shoff);
+	printf("\n\te_flags: %u (Processor specific flags)", hdr->e_flags);
+	printf("\n\te_ehsize: %hu (Elf header size)", hdr->e_ehsize);
+	printf("\n\te_phentsize: %hu (Size of program header entry)", hdr->e_phentsize);
+	printf("\n\te_phnum: %hu (Number of program hearder Entries)", hdr->e_phnum);
+	printf("\n\te_shentsize: %hu (Size of section header entry)", hdr->e_shentsize);
+	printf("\n\te_shnum: %hu (Number of section header entries)", hdr->e_shnum);
+	printf("\n\te_shstrndx: %hu (Section name string table index)\n", hdr->e_shstrndx);
+
+	shdr = (void *)ptr + hdr->e_shoff;
+	sstr = (void *)ptr + get_section64(hdr, hdr->e_shstrndx)->sh_offset;
+	for (i = 0; i < hdr->e_shnum; ++i)
+	{
+		printf("\n\tsh_name: %s (Section name)", (void *)sstr + shdr->sh_name);
+		printf("\n\tsh_type: %u (Section type)", shdr->sh_type);
+		printf("\n\tsh_flags: %lu (Section attributes)", shdr->sh_flags);
+		printf("\n\tsh_addr: %lu (Virtual address in memory)", shdr->sh_addr);
+		printf("\n\tsh_offset: %lu (Offset in file)", shdr->sh_offset);
+		printf("\n\tsh_size: %lu (Size of section)", shdr->sh_size);
+		printf("\n\tsh_link: %u (Link to other section)", shdr->sh_link);
+		printf("\n\tsh_info: %u (Miscellaneous info)", shdr->sh_info);
+		printf("\n\tsf_addralign: %lu (Address alignment boundary)", shdr->sh_addralign);
+		printf("\n\tsh_entsize: %lu (Size of entries, if section has table)\n", shdr->sh_entsize);
+		shdr = (void *)shdr + sizeof(Elf64_Shdr);
+	}
+
 }
 
 int					main(int ac, char **av)
