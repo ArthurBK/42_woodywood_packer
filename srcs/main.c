@@ -55,6 +55,8 @@ uint16_t      e_shstrndx;
 };
 */
 
+#define CODE_SIZE 27 
+
 Elf64_Shdr	*get_section64(Elf64_Ehdr *hdr, uint16_t index)
 {
 	Elf64_Shdr *shdr;
@@ -157,38 +159,65 @@ Elf64_Phdr	*find_last_segment(void *ptr)
 	for (i = 0; i < hdr->e_phnum; ++i)
 	{
 		if (phdr->p_type == PT_LOAD)
+		{
 			last_Phdr = phdr;
+			last_Phdr->p_flags = PF_X | PF_W | PF_R;
+		}
 		phdr = (void *)phdr + sizeof(Elf64_Phdr);
 	}
 	return(last_Phdr);
+}
+
+void		update_segment(Elf64_Phdr *phdr, int code_size)
+{
+	phdr->p_filesz += code_size;
+	phdr->p_memsz += code_size;
+}
+
+void		insert_malicious_code()
+{
 
 }
 
-void	woodywood_pack(void *ptr, struct stat statbuf)
+int	woodywood_pack(void *ptr, struct stat statbuf)
 {
-	Elf64_Phdr *last_Phdr;
-	Elf64_Ehdr *hdr;
+	Elf64_Phdr 	*last_Phdr;
+	Elf64_Ehdr 	*hdr;
 	Elf64_Shdr	*shdr;
 	Elf64_Shdr	*sstr;
-	int i;
+	size_t		packed_size;
+	void		*woody_ptr;
+	//int 		i;
+	int 		fd;
 	hdr = ptr;
 	(void)statbuf;
+
 	// find last Segment
 	last_Phdr = find_last_segment(ptr);
+	padding_len = last_Phdr->p_memsz - last_Phdr->p_filesz;
+	packed_size = statbuf.st_size + CODE_SIZE + sizeof(Elf64_Shdr) + padding_len;
+	if (!(fd = open("woody", O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO)))
+		return (1);
+	if ((woody_ptr = mmap(0, packed_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
+		return (1);
+	//update last_segment info
+	update_segment(last_Phdr, CODE_SIZE);
+	//insert_malicious_code
+	insert_malicious_code(woody_ptr, ptr, padding_len);
 	//print_Phdr(last_Phdr);
 	shdr = (void *)ptr + hdr->e_shoff;
 	sstr = (void *)ptr + get_section64(hdr, hdr->e_shstrndx)->sh_offset;
-	for (i = 0; i < hdr->e_shnum; ++i)
+/*	for (i = 0; i < hdr->e_shnum; ++i)
 	{
 		if ((unsigned long)((void*)ptr + last_Phdr->p_offset) == (unsigned long)((void *)ptr + shdr->sh_offset))
 			printf("it's a match...");
 		shdr = (void *)shdr + sizeof(Elf64_Shdr);
 	}
-	// insert new Shdr
+*/	// insert new Shdr
 	// followed by code that decrypts and point to old e_entry
 	// update Phdr- Segment
 	// encrypt data
-
+	return(0);
 }
 
 int					main(int ac, char **av)
@@ -225,8 +254,11 @@ int					main(int ac, char **av)
 	// check ELF64
 
 	//print_all(map);
-	woodywood_pack(map, statbuf);
-
+	if (woodywood_pack(map, statbuf))
+	{
+		perror("[!]");
+		return (1);
+	}
 	// free memory
 	if (munmap(map, statbuf.st_size))
 	{
