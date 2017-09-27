@@ -1,0 +1,5 @@
+	modifier entrypoint
+	modifier nsect
+	ajouter section apres bss / tout decaler
+	injecter code
+	
