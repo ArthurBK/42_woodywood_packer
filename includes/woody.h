@@ -25,4 +25,13 @@
 
 # include <libft.h>
 
+int	woodywood_pack(void *ptr, struct stat statbuf);
+Elf64_Shdr	*get_section64(Elf64_Ehdr *hdr, uint16_t index);
+Elf64_Phdr	*find_last_segment(void *ptr);
+void print_Ehdr(Elf64_Ehdr *hdr);
+void print_Phdr(Elf64_Phdr *phdr);
+void print_Shdr(Elf64_Shdr *shdr, Elf64_Shdr *sstr);
+void print_all(void *ptr);
+
+#define CODE_SIZE 27
 #endif
