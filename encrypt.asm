@@ -22,7 +22,7 @@ SECTION .text
 	call init_keys_round
 
 	mov rcx, rsi
-	shr rcx, 16
+	shr rcx, 4 
 	jmp loop_str
 	
 	loop_str:
