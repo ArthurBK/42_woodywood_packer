@@ -26,16 +26,17 @@ int main(void)
 	}
 		
  */	
+
 	void *tmp;
 	void *res;
 	int i;
 	char text[]= "Two One Nine Two";
 	char key[] = "Thats my Kung Fu";
 	tmp = encrypt(text, 16, key);
-	res = decrypt(tmp, 16, key);
 	for(i = 0; i < 16; ++i)
-		printf("%2X ", ((unsigned char*)tmp)[i]);
+		printf("%02X ", ((unsigned char*)tmp)[i]);
 	printf("\n");
+	res = decrypt(tmp, 16, key);
 	printf("%s\n", (char *)res);
 	
 	return (0);

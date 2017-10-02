@@ -9,80 +9,103 @@ decrypt:
 push rbp
 mov rbp, rsp
 
-sub rsp, 0xb0
-mov rbx, rsp
+push rdi
 
-movdqu xmm1, [rdx] 	; mov initial key 
-movdqu [rbx], xmm1 	; mov key to stack
-mov rcx, rbx		; mov addr to rcx 
-add rcx, 0x10 		; point to next elem on stack
+movdqu xmm11, [rdx] 	; save initial key 
 call init_keys_round
-mov rcx, 9
-mov r8, 0x10
-call keys_decrypt
+
+movdqu xmm14, [rdi]
 call aes
-movdqu [rdi], xmm1
-lea rax, [rdi]
+movdqu [rdi], xmm14
+
+pop rax
 leave
 ret
 
 aes:
-movdqu xmm1, [rdi]
-pxor xmm1, [rbx + 0xa0] ; round0 (Whitening round)
-aesdec xmm1, [rbx + 0x90] ; round1
-aesdec xmm1, [rbx + 0x80] ; round2
-aesdec xmm1, [rbx + 0x70] ; round3
-aesdec xmm1, [rbx + 0x60] ; round4
-aesdec xmm1, [rbx + 0x50] ; round5
-aesdec xmm1, [rbx + 0x40] ; round6
-aesdec xmm1, [rbx + 0x30] ; round7
-aesdec xmm1, [rbx + 0x20] ; round8
-aesdec xmm1, [rbx + 0x10] ; round9
-aesdeclast xmm1, [rbx] ; round10
+pxor xmm14, xmm10 ; round0 (Whitening round)
+aesdec xmm14, xmm9 ; round1
+aesdec xmm14, xmm8 ; round2
+aesdec xmm14, xmm7 ; round3
+aesdec xmm14, xmm6 ; round4
+aesdec xmm14, xmm5 ; round5
+aesdec xmm14, xmm4 ; round6
+aesdec xmm14, xmm3 ; round7
+aesdec xmm14, xmm2 ; round8
+aesdec xmm14, xmm1 ; round9
+aesdeclast xmm14, xmm0 ; round10
 ret
 
+
+
+
+
+; Fills registers xmm0-10 with the round keys
 init_keys_round:
-aeskeygenassist xmm2, xmm1, 0x1
+
+movdqu xmm0, xmm11
+
+aeskeygenassist xmm12, xmm0, 0x1
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x2
+movdqu xmm1, xmm11
+
+aeskeygenassist xmm12, xmm1, 0x2
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x4
+movdqu xmm2, xmm11
+
+aeskeygenassist xmm12, xmm2, 0x4
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x8
+movdqu xmm3, xmm11
+
+aeskeygenassist xmm12, xmm3, 0x8
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x10
+movdqu xmm4, xmm11
+
+aeskeygenassist xmm12, xmm4, 0x10
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x20
+movdqu xmm5, xmm11
+
+aeskeygenassist xmm12, xmm5, 0x20
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x40
+movdqu xmm6, xmm11
+
+aeskeygenassist xmm12, xmm6, 0x40
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x80
+movdqu xmm7, xmm11
+
+aeskeygenassist xmm12, xmm7, 0x80
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x1b
+movdqu xmm8, xmm11
+
+aeskeygenassist xmm12, xmm8, 0x1b
 call key_expansion_128
-aeskeygenassist xmm2, xmm1, 0x36
+movdqu xmm9, xmm11
+
+aeskeygenassist xmm12, xmm9, 0x36
 call key_expansion_128
+movdqu xmm10, xmm11
+
+aesimc xmm1, xmm1
+aesimc xmm2, xmm2
+aesimc xmm3, xmm3
+aesimc xmm4, xmm4
+aesimc xmm5, xmm5
+aesimc xmm6, xmm6
+aesimc xmm7, xmm7
+aesimc xmm8, xmm8
+aesimc xmm9, xmm9
 ret
+
+
 
 key_expansion_128:
-pshufd xmm2, xmm2, 0xff
-vpslldq xmm3, xmm1, 0x4
-pxor xmm1, xmm3
-vpslldq xmm3, xmm1, 0x4
-pxor xmm1, xmm3
-vpslldq xmm3, xmm1, 0x4
-pxor xmm1, xmm3
-pxor xmm1, xmm2
-movdqu [rcx], xmm1 ; load res to stack
-add rcx, 0x10 ; point to next elem on stak
+pshufd xmm12, xmm12, 0xff
+vpslldq xmm13, xmm11, 0x4
+pxor xmm11, xmm13
+vpslldq xmm13, xmm11, 0x4
+pxor xmm11, xmm13
+vpslldq xmm13, xmm11, 0x4
+pxor xmm11, xmm13
+pxor xmm11, xmm12
 ret
 
-keys_decrypt:
-movdqu xmm1, [rbx + r8]
-aesimc xmm1, xmm1
-movdqu [rbx + r8], xmm1
-dec rcx
-add r8, 0x10
-cmp rcx, 0
-jne keys_decrypt
-ret

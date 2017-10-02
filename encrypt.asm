@@ -5,26 +5,6 @@
 
 GLOBAL encrypt
 SECTION .text
-;	GLOBAL _start
-
-;	_start:
-;	lea rdi, [rel msg]
-;	mov rsi, 16
-;	lea rdx, [rel key]
-;	call encrypt
-;
-;	movdqu [rdi], xmm1
-;	
-;	mov rcx, rdi
-;	mov rbx, 1 	;fd
-;	mov rdx, 16 	;len
-;	mov rax, 4 	;syscall
-;	int 0x80
-;
-;	mov rdx, 0
-;	mov rax, 1
-;	int 0x80
-
 
 ; void *encrypt(void *data, size_t size, void *key)
 ; rdi data 
@@ -33,68 +13,104 @@ SECTION .text
 	encrypt:
 	push rbp
 	mov rbp, rsp
+	push rdi
 
-	sub rsp, 0xb0
 	mov rbx, rsp
 	
-	movdqu xmm1, [rdx] 	; mov initial key 
-	movdqu [rbx], xmm1 	; mov key to stack
-	mov rcx, rbx		; mov addr to rcx 
-	add rcx, 0x10 		; point to next elem on stack
+	movdqu xmm11, [rdx] 	; save first key
+
 	call init_keys_round
+
+	mov rcx, rsi
+	shr rcx, 16
+	jmp loop_str
+	
+	loop_str:
+	cmp rcx, 0
+	je end
+	movdqu xmm14, [rdi]
 	call aes
-	movdqu [rdi], xmm1
-	lea rax, [rdi]
+	movdqu [rdi], xmm14
+	dec rcx
+	add rdi, 0x10
+	jmp loop_str
+
+	end:
+	pop rax
 	leave
 	ret
 
 	aes:
-	movdqu xmm1, [rdi]
-	pxor xmm1, [rbx] ; round0 (Whitening round)
-	aesenc xmm1, [rbx + 0x10] ; round1
-	aesenc xmm1, [rbx + 0x20] ; round2
-	aesenc xmm1, [rbx + 0x30] ; round3
-	aesenc xmm1, [rbx + 0x40] ; round4
-	aesenc xmm1, [rbx + 0x50] ; round5
-	aesenc xmm1, [rbx + 0x60] ; round6
-	aesenc xmm1, [rbx + 0x70] ; round7
-	aesenc xmm1, [rbx + 0x80] ; round8
-	aesenc xmm1, [rbx + 0x90] ; round9
-	aesenclast xmm1, [rbx + 0xa0] ; round10
+	pxor xmm14, xmm0 ; round0 (Whitening round)
+	aesenc xmm14, xmm1 ; round1
+	aesenc xmm14, xmm2 ; round2
+	aesenc xmm14, xmm3 ; round3
+	aesenc xmm14, xmm4 ; round4
+	aesenc xmm14, xmm5 ; round5
+	aesenc xmm14, xmm6 ; round6
+	aesenc xmm14, xmm7 ; round7
+	aesenc xmm14, xmm8 ; round8
+	aesenc xmm14, xmm9 ; round9
+	aesenclast xmm14, xmm10 ; round10
 	ret
 
-	init_keys_round:
-	aeskeygenassist xmm2, xmm1, 0x1
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x2
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x4
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x8
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x10
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x20
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x40
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x80
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x1b
-	call key_expansion_128
-	aeskeygenassist xmm2, xmm1, 0x36
-	call key_expansion_128
-	ret
+; Fills registers xmm0-10 with the round keys
+init_keys_round:
 
-	key_expansion_128:
-	pshufd xmm2, xmm2, 0xff
-	vpslldq xmm3, xmm1, 0x4
-	pxor xmm1, xmm3
-	vpslldq xmm3, xmm1, 0x4
-	pxor xmm1, xmm3
-	vpslldq xmm3, xmm1, 0x4
-	pxor xmm1, xmm3
-	pxor xmm1, xmm2
-	movdqu [rcx], xmm1 ; load res to stack
-	add rcx, 0x10 ; point to next elem on stak
-	ret
+movdqu xmm0, xmm11
+
+aeskeygenassist xmm12, xmm0, 0x1
+call key_expansion_128
+movdqu xmm1, xmm11
+
+aeskeygenassist xmm12, xmm1, 0x2
+call key_expansion_128
+movdqu xmm2, xmm11
+
+aeskeygenassist xmm12, xmm2, 0x4
+call key_expansion_128
+movdqu xmm3, xmm11
+
+aeskeygenassist xmm12, xmm3, 0x8
+call key_expansion_128
+movdqu xmm4, xmm11
+
+aeskeygenassist xmm12, xmm4, 0x10
+call key_expansion_128
+movdqu xmm5, xmm11
+
+aeskeygenassist xmm12, xmm5, 0x20
+call key_expansion_128
+movdqu xmm6, xmm11
+
+aeskeygenassist xmm12, xmm6, 0x40
+call key_expansion_128
+movdqu xmm7, xmm11
+
+aeskeygenassist xmm12, xmm7, 0x80
+call key_expansion_128
+movdqu xmm8, xmm11
+
+aeskeygenassist xmm12, xmm8, 0x1b
+call key_expansion_128
+movdqu xmm9, xmm11
+
+aeskeygenassist xmm12, xmm9, 0x36
+call key_expansion_128
+movdqu xmm10, xmm11
+
+ret
+
+
+
+key_expansion_128:
+pshufd xmm12, xmm12, 0xff
+vpslldq xmm13, xmm11, 0x4
+pxor xmm11, xmm13
+vpslldq xmm13, xmm11, 0x4
+pxor xmm11, xmm13
+vpslldq xmm13, xmm11, 0x4
+pxor xmm11, xmm13
+pxor xmm11, xmm12
+ret
+
