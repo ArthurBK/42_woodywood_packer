@@ -87,7 +87,7 @@ SECTION .text
 	ret
 
 	key_expansion_128:
-	pshufd xmm2, xmm1, 0xff
+	pshufd xmm2, xmm2, 0xff
 	vpslldq xmm3, xmm1, 0x4
 	pxor xmm1, xmm3
 	vpslldq xmm3, xmm1, 0x4

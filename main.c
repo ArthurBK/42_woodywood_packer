@@ -1,15 +1,44 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#define _GNU_SOURCE
 
 void *encrypt(void *data, size_t size, void *key);
-
+void *decrypt(void *data, size_t size, void *key);
 
 int main(void)
 {
+
+/*
+	unsigned int *buf;
+	int i;
+	syscall(318, buf, 16);
+	for (i = 0; i < 16; ++i)
+	{
+		buf[i] = buf[i] % 75 + 48;
+		if (buf[i] >= 58 && buf[i] <= 64)
+			buf[i] -= 8;
+		if (buf[i] >= 91 && buf[i] <= 96)
+			buf[i] -= 6;
+		printf("%c\n", buf[i]);
+
+	}
+		
+ */	
+	void *tmp;
 	void *res;
-	char test[]= "hey you what up ";
-	res = encrypt(test, 16, "BBBBBBBBBBBBBBBB");
+	int i;
+	char text[]= "Two One Nine Two";
+	char key[] = "Thats my Kung Fu";
+	tmp = encrypt(text, 16, key);
+	res = decrypt(tmp, 16, key);
+	for(i = 0; i < 16; ++i)
+		printf("%2X ", ((unsigned char*)tmp)[i]);
+	printf("\n");
 	printf("%s\n", (char *)res);
+	
 	return (0);
 }
+
 
