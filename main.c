@@ -30,13 +30,14 @@ int main(void)
 	void *tmp;
 	void *res;
 	int i;
-	char text[]= "Two One Nine Two";
+	char text[]= "Two One Nine Two three";
 	char key[] = "Thats my Kung Fu";
-	tmp = encrypt(text, 16, key);
-	for(i = 0; i < 16; ++i)
+	tmp = encrypt(text, 22, key);
+	for(i = 0; i < 22; ++i)
 		printf("%02X ", ((unsigned char*)tmp)[i]);
 	printf("\n");
-	res = decrypt(tmp, 16, key);
+	printf("%s\n", (char *)tmp);
+	res = decrypt(tmp, 22, key);
 	printf("%s\n", (char *)res);
 	
 	return (0);
