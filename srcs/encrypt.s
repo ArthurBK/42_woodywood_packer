@@ -10,60 +10,60 @@ SECTION .text
 ; rdi data 
 ; rsi size
 ; rdx key
-	encrypt:
-	push rbp
-	mov rbp, rsp
-	push rdi
-	push rsi
+encrypt:
+push rbp
+mov rbp, rsp
+push rdi
+push rsi
 
-	mov rbx, rsp
-	
-	movdqu xmm11, [rdx] 	; save first key
+mov rbx, rsp
 
-	call init_keys_round
+movdqu xmm11, [rdx] 	; save first key
 
-	mov rcx, rsi
-	shr rcx, 4 
-	and rsi, 0xf
-	jmp loop_str
-	
-	loop_str:
-	cmp rcx, 0
-	je check_modulo
-	movdqu xmm14, [rdi]
-	call aes
-	movdqu [rdi], xmm14
-	dec rcx
-	add rdi, 0x10
-	jmp loop_str
+call init_keys_round
 
-	check_modulo:
-	cmp rsi, 0
-	je  end
-	movdqu xmm15, [rdi]	
-	xorps xmm15, xmm11
-	movdqu [rdi], xmm15
-	jmp end
+mov rcx, rsi
+shr rcx, 4 
+and rsi, 0xf
+jmp loop_str
 
-	end:
-	pop rsi
-	pop rax
-	leave
-	ret
+loop_str:
+cmp rcx, 0
+je check_modulo
+movdqu xmm14, [rdi]
+call aes
+movdqu [rdi], xmm14
+dec rcx
+add rdi, 0x10
+jmp loop_str
 
-	aes:
-	pxor xmm14, xmm0 ; round0 (Whitening round)
-	aesenc xmm14, xmm1 ; round1
-	aesenc xmm14, xmm2 ; round2
-	aesenc xmm14, xmm3 ; round3
-	aesenc xmm14, xmm4 ; round4
-	aesenc xmm14, xmm5 ; round5
-	aesenc xmm14, xmm6 ; round6
-	aesenc xmm14, xmm7 ; round7
-	aesenc xmm14, xmm8 ; round8
-	aesenc xmm14, xmm9 ; round9
-	aesenclast xmm14, xmm10 ; round10
-	ret
+check_modulo:
+cmp rsi, 0
+je  end
+movdqu xmm15, [rdi]	
+xorps xmm15, xmm11
+movdqu [rdi], xmm15
+jmp end
+
+end:
+pop rsi
+pop rax
+leave
+ret
+
+aes:
+pxor xmm14, xmm0 ; round0 (Whitening round)
+aesenc xmm14, xmm1 ; round1
+aesenc xmm14, xmm2 ; round2
+aesenc xmm14, xmm3 ; round3
+aesenc xmm14, xmm4 ; round4
+aesenc xmm14, xmm5 ; round5
+aesenc xmm14, xmm6 ; round6
+aesenc xmm14, xmm7 ; round7
+aesenc xmm14, xmm8 ; round8
+aesenc xmm14, xmm9 ; round9
+aesenclast xmm14, xmm10 ; round10
+ret
 
 ; Fills registers xmm0-10 with the round keys
 init_keys_round:

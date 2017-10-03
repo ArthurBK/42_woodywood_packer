@@ -12,8 +12,10 @@
 
 #### COMPILATION VARS ####
 NAME = woody_woodpacker
-CC = clang
+CC = gcc -g
+NASM = nasm
 
+AFLAGS = -f elf64
 CFLAGS = -Wall -Wextra -Werror
 C_FILES = main.c\
 	  print_elf.c\
@@ -52,7 +54,9 @@ all: $(NAME)
 
 $(NAME): libft $(OBJ)
 	@printf "[WOODY_WOODPACKER]: Compiling $(GREEN)$(NAME)$(NC)... "
-	@$(CC) $(CFLAGS) -o $(NAME) $(OBJ) $(LIBFT)
+	@$(NASM) $(AFLAGS) srcs/encrypt.s -o obj/encrypt.o
+	@$(NASM) $(AFLAGS) srcs/decrypt.s -o obj/decrypt.o
+	@$(CC) $(CFLAGS) -o $(NAME) $(OBJ) obj/encrypt.o libft/libft.a 
 	@printf "$(LGREEN)OK$(NC)\n"
 	@printf "[WOODY_WOODPACKER]: $(RED)ALL DONE$(NC)\n"
 

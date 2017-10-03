@@ -1,16 +1,24 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: fventuri <fventuri@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2017/05/11 11:45:13 by fventuri          #+#    #+#             */
-/*   Updated: 2017/05/12 15:18:52 by abonneca         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include <woody.h>
+
+void	generate_key(void *buf)
+{	
+	int i;
+	unsigned int *buf2;
+
+	buf2 = buf;
+	syscall(318, buf2, 16);
+	for (i = 0; i < 16; ++i)
+	{
+		buf2[i] = buf2[i] % 75 + 48;
+		if (buf2[i] >= 58 && buf2[i] <= 64)
+			buf2[i] -= 8;
+		if (buf2[i] >= 91 && buf2[i] <= 96)
+			buf2[i] -= 6;
+		// printf("%c\n", buf[i]);
+	}
+
+}
 
 int					main(int ac, char **av)
 {
@@ -45,7 +53,7 @@ int					main(int ac, char **av)
 
 	// check ELF64
 
-	//print_all(map);
+	// print_all(map);
 	if (woodywood_pack(map, statbuf))
 	{
 		perror("[!]");

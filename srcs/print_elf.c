@@ -37,7 +37,7 @@ void print_Phdr(Elf64_Phdr *phdr)
 
 void print_Shdr(Elf64_Shdr *shdr, Elf64_Shdr *sstr)
 {
-	printf("\n\tsh_name: %s (Section name)", (void *)sstr + shdr->sh_name);
+	printf("\n\tsh_name: %s (Section name)", (char *)((void *)sstr + shdr->sh_name));
 	printf("\n\tsh_type: %u (Section type)", shdr->sh_type);
 	printf("\n\tsh_flags: %lu (Section attributes)", shdr->sh_flags);
 	printf("\n\tsh_addr: %lu (Virtual address in memory)", shdr->sh_addr);

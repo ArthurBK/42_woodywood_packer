@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 NAME = libft.a
-CC = clang
+CC = gcc -g
 CFLAGS = -Wall -Wextra -Werror
 C_FILES = ft_atof.c \
 		  ft_atoi.c \
