@@ -91,7 +91,10 @@ int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, unsigned 
 			ft_memcpy(shellcode + shell_symtab->st_value, &decr_offset, 4);
 		}
 		else if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "size"))
+		{
+			printf("size ok: to_decrypt->sh_size\n");
 			ft_memcpy(shellcode + shell_symtab->st_value, &(to_decrypt->sh_size), 4);
+		}
 		else if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "key"))
 			ft_memcpy(shellcode + shell_symtab->st_value, key, 4);
 		else if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "entrypoint"))
@@ -151,7 +154,8 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 	if (insert_code(to_encrypt, woody_ptr + last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, \
 				shellcode, last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, key))
 		return (1);
-	((Elf64_Ehdr *)woody_ptr)->e_entry = last_Phdr->p_offset + last_Phdr->p_filesz + padding_len;
+	((Elf64_Ehdr *)woody_ptr)->e_entry = 0x0000000000601038 + 0x33;
+	//last_Phdr->p_offset + last_Phdr->p_filesz + padding_len;
 	// followed by code that decrypts and point to old e_entry
 	write(fd, woody_ptr, packed_size);
 	//print_all(woody_ptr);
