@@ -2,7 +2,7 @@ GLOBAL decrypt
 SECTION .text
 woody_wood:	db "....WOODY....", 10, 0
 key:		db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-to_encrypt:	db 0, 0, 0, 0, 0, 0, 0, 0
+to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0
 size:		db 0, 0, 0, 0
 entrypoint:	db 0, 0, 0, 0, 0, 0, 0, 0
 
@@ -16,9 +16,9 @@ push rbp
 mov rbp, rsp
 push rdi		; push pointer to data to stack
 
-mov r12, rdi		; mov params
-mov r13, rsi		; for write call
-mov r14, rdx
+;mov r12, rdi		; mov params
+;mov r13, rsi		; for write call
+;mov r14, rdx
 
 mov rax, 1		; write syscall
 mov rdi, 1		; stdout
@@ -26,13 +26,15 @@ lea rsi, [rel woody_wood] ; ptr to str to write
 mov rdx, 14		; bytes to write
 syscall
 
-mov rdi, r12		; mov params back
-mov rsi, r13		;
-mov rdx, r14		;
+;mov rdi, r12		; mov params back
+;mov rsi, r13		;
+;mov rdx, r14		;
 
-movdqu xmm11, [rdx] 	; save initial key 
+movdqu xmm11, [rel key] 	; save initial key 
 call init_keys_round
-mov rcx, rsi
+mov rcx, [rel size]
+lea rax, [rel to_decrypt]
+sub rax, [rax]
 shr rcx, 4		; divide by 16 to get loops nb
 and rsi, 0xf
 jmp loop_str
@@ -49,8 +51,11 @@ jmp loop_str
 
 end:
 pop rax
-leave
-ret
+lea rax, [rel entrypoint]
+sub rax, [rax]
+jmp rax
+;leave
+;ret
 
 
 check_modulo:

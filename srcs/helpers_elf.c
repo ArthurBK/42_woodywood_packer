@@ -70,3 +70,18 @@ Elf64_Shdr	*get_section64_with_e(Elf64_Ehdr *hdr, Elf64_Addr entry)
 }
 
 
+Elf64_Shdr	*get_sym_strtab(Elf64_Ehdr *hdr)
+{
+	Elf64_Shdr *shdr;
+	int i;
+
+	shdr = (void *)hdr + hdr->e_shoff;
+	for(i = 0; i < hdr->e_shnum; ++i)
+	{
+		if (i != hdr->e_shstrndx && shdr->sh_type == SHT_STRTAB)
+			return(shdr);
+		shdr = (void *)shdr + sizeof(Elf64_Shdr);
+	}
+	return (NULL);
+}
+
