@@ -1,10 +1,5 @@
 GLOBAL decrypt
 SECTION .text
-woody_wood:	db "....WOODY....", 10, 0
-key:		db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-size:		db 0, 0, 0, 0, 0, 0, 0, 0
-entrypoint:	db 0, 0, 0, 0, 0, 0, 0, 0
 
 ; void *encrypt(void *data, size_t size, void *key)
 ; rdi data 
@@ -154,3 +149,8 @@ pxor xmm11, xmm13
 pxor xmm11, xmm12
 ret
 
+woody_wood:	db "....WOODY....", 10, 0
+key:		db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+size:		db 0, 0, 0, 0, 0, 0, 0, 0
+entrypoint:	db 0, 0, 0, 0, 0, 0, 0, 0

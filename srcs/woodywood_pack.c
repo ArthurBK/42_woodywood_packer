@@ -34,7 +34,6 @@ void		alloc_malicious_code(void *woody_ptr, Elf64_Phdr *last_Phdr, void *ptr, si
 
 	padding_len = last_Phdr->p_memsz - last_Phdr->p_filesz;
 	ft_memcpy(woody_ptr, ptr, last_Phdr->p_offset + last_Phdr->p_filesz);
-	//ft_memcpy(woody_ptr + last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, code, C);
 	ft_memcpy(woody_ptr + last_Phdr->p_offset + last_Phdr->p_filesz + padding_len + code_size, 
 			ptr + last_Phdr->p_offset + last_Phdr->p_filesz, 
 			filesz - last_Phdr->p_offset - last_Phdr->p_filesz);
@@ -46,7 +45,7 @@ void		update_segment(Elf64_Phdr *phdr, int code_size)
 	phdr->p_memsz += code_size;
 }
 
-void	insert_Shdr(Elf64_Ehdr *woody_Ehdr, Elf64_Shdr *woody_Shdr, Elf64_Ehdr *hdr, size_t padding_len, size_t code_size)
+Elf64_Addr	insert_Shdr(Elf64_Ehdr *woody_Ehdr, Elf64_Shdr *woody_Shdr, Elf64_Ehdr *hdr, size_t padding_len, size_t code_size)
 {	
 	int i;
 	Elf64_Phdr *last_Phdr;
@@ -62,12 +61,13 @@ void	insert_Shdr(Elf64_Ehdr *woody_Ehdr, Elf64_Shdr *woody_Shdr, Elf64_Ehdr *hdr
 	woody_Shdr->sh_flags = SHF_EXECINSTR | SHF_ALLOC;
 	woody_Shdr->sh_offset = last_Phdr->p_offset + last_Phdr->p_filesz + padding_len;
 	woody_Shdr->sh_addr = (last_Phdr->p_vaddr - last_Phdr->p_offset) + woody_Shdr->sh_offset;
-	woody_Shdr->sh_size = CODE_SIZE;
+	woody_Shdr->sh_size = code_size;
 	woody_Shdr->sh_addralign = 16;
 	woody_Ehdr->e_shnum++;
+	return ((woody_Shdr->sh_addr));
 }
 
-int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, unsigned int code_offset, void *key)
+int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, unsigned int code_offset, Elf64_Addr new_ep,void *key)
 {
 	Elf64_Off	decr_offset;
 	Elf64_Sym	*shell_symtab;
@@ -84,7 +84,7 @@ int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, unsigned 
 
 		if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "to_decrypt"))
 		{		
-			decr_offset = (to_decrypt->sh_offset - code_offset - shell_symtab->st_value);
+			decr_offset = (new_ep - to_decrypt->sh_offset - code_offset - shell_symtab->st_value);
 			printf("to_decrypt: %ld\n", decr_offset);
 			ft_memcpy((void *)shellcode + shell_exec->sh_offset + shell_symtab->st_value, &decr_offset, 16);
 		}
@@ -131,6 +131,7 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 {
 	Elf64_Phdr 	*last_Phdr;
 	Elf64_Ehdr 	*hdr;
+	Elf64_Addr 	new_entrypoint;
 	Elf64_Shdr	*to_encrypt;
 	void		*key;
 	size_t		packed_size;
@@ -147,7 +148,7 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 		return (1);
 	padding_len = last_Phdr->p_memsz - last_Phdr->p_filesz;
 	packed_size = statbuf.st_size + code_size + sizeof(Elf64_Shdr) + padding_len;
-	if (!(fd = open("woody", O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO)))
+	if (!(fd = open("woody", O_RDWR | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO)))
 		return (1);
 	if (!(woody_ptr = ft_memalloc(packed_size)))
 		return (1);
@@ -167,12 +168,12 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 	// update header
 	((Elf64_Ehdr *)woody_ptr)->e_shoff += code_size + padding_len;
 	// insert new Shdr
-	insert_Shdr(woody_ptr, (void *)woody_ptr + ((Elf64_Ehdr *)woody_ptr)->e_shoff, hdr, padding_len, code_size);
+	new_entrypoint = insert_Shdr(woody_ptr, (void *)woody_ptr + ((Elf64_Ehdr *)woody_ptr)->e_shoff, hdr, padding_len, code_size);
 	// insert code
 	if (insert_code(to_encrypt, (void *)woody_ptr + last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, \
-				shellcode, last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, key))
+				shellcode, last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, new_entrypoint, key))
 		return (1);
-	((Elf64_Ehdr *)woody_ptr)->e_entry = 0x0000000000601038 + 0x43;
+	((Elf64_Ehdr *)woody_ptr)->e_entry = new_entrypoint;
 	//last_Phdr->p_offset + last_Phdr->p_filesz + padding_len;
 	// followed by code that decrypts and point to old e_entry
 	write(fd, woody_ptr, packed_size);
