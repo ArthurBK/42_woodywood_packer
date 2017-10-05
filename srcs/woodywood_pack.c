@@ -84,7 +84,7 @@ int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, unsigned 
 
 		if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "to_decrypt"))
 		{		
-			decr_offset = (new_ep - to_decrypt->sh_offset - code_offset - shell_symtab->st_value);
+			decr_offset = (new_ep + shell_symtab->st_value - to_decrypt->sh_addr);
 			printf("to_decrypt: %ld\n", decr_offset);
 			ft_memcpy((void *)shellcode + shell_exec->sh_offset + shell_symtab->st_value, &decr_offset, 16);
 		}
@@ -147,6 +147,7 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 	if (!(shellcode = open_shellcode(&code_size)))
 		return (1);
 	padding_len = last_Phdr->p_memsz - last_Phdr->p_filesz;
+	printf("%ld\n", padding_len);
 	packed_size = statbuf.st_size + code_size + sizeof(Elf64_Shdr) + padding_len;
 	if (!(fd = open("woody", O_RDWR | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO)))
 		return (1);

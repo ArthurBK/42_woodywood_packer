@@ -29,7 +29,7 @@ movdqu xmm11, [rel key] 	; save initial key
 call init_keys_round
 mov rcx, [rel size]
 lea rdi, [rel to_decrypt]
-add rdi, [rdi]
+sub rdi, [rdi]
 shr rcx, 4		; divide by 16 to get loops nb
 ;and rsi, 0xf
 jmp loop_str
@@ -47,7 +47,7 @@ jmp loop_str
 end:
 pop rax
 lea rax, [rel entrypoint]
-sub rax, [rax]
+add rax, [rax]
 jmp rax
 ;leave
 ;ret
