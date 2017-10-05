@@ -22,6 +22,7 @@
 # include <sys/types.h>
 # include <unistd.h>
 # include <stdlib.h>
+# include <sys/syscall.h>
 
 # include <libft.h>
 

@@ -2,8 +2,8 @@ GLOBAL decrypt
 SECTION .text
 woody_wood:	db "....WOODY....", 10, 0
 key:		db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0
-size:		db 0, 0, 0, 0
+to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+size:		db 0, 0, 0, 0, 0, 0, 0, 0
 entrypoint:	db 0, 0, 0, 0, 0, 0, 0, 0
 
 ; void *encrypt(void *data, size_t size, void *key)
@@ -33,10 +33,10 @@ syscall
 movdqu xmm11, [rel key] 	; save initial key 
 call init_keys_round
 mov rcx, [rel size]
-lea rax, [rel to_decrypt]
-sub rax, [rax]
+lea rdi, [rel to_decrypt]
+add rdi, [rdi]
 shr rcx, 4		; divide by 16 to get loops nb
-and rsi, 0xf
+;and rsi, 0xf
 jmp loop_str
 
 loop_str:

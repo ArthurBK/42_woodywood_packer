@@ -4,10 +4,10 @@
 void	generate_key(void *buf)
 {	
 	int i;
-	unsigned int *buf2;
+	unsigned char *buf2;
 
 	buf2 = buf;
-	syscall(318, buf2, 16);
+	syscall(SYS_getrandom, buf2, 16, 0);
 	for (i = 0; i < 16; ++i)
 	{
 		buf2[i] = buf2[i] % 75 + 48;
@@ -15,7 +15,6 @@ void	generate_key(void *buf)
 			buf2[i] -= 8;
 		if (buf2[i] >= 91 && buf2[i] <= 96)
 			buf2[i] -= 6;
-		// printf("%c\n", buf[i]);
 	}
 
 }

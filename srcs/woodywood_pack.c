@@ -70,14 +70,11 @@ void	insert_Shdr(Elf64_Ehdr *woody_Ehdr, Elf64_Shdr *woody_Shdr, Elf64_Ehdr *hdr
 int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, unsigned int code_offset, void *key)
 {
 	Elf64_Off	decr_offset;
-	//uint64_t	encr_size;
 	Elf64_Sym	*shell_symtab;
 	Elf64_Shdr	*shell_symtabhdr;
 	Elf64_Shdr	*shell_exec;
 	Elf64_Shdr	*shell_str;
 
-	//	encr_offset = to_encrypt->sh_offset;
-	//	encr_size = to_encrypt->sh_size;
 	shell_symtabhdr = get_section64_by_type(shellcode, SHT_SYMTAB);
 	shell_symtab = (void *)shellcode + shell_symtabhdr->sh_offset;
 	shell_str = (void *)shellcode + (get_sym_strtab(shellcode))->sh_offset;
@@ -88,23 +85,44 @@ int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, unsigned 
 		if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "to_decrypt"))
 		{		
 			decr_offset = (to_decrypt->sh_offset - code_offset - shell_symtab->st_value);
-			ft_memcpy(shellcode + shell_symtab->st_value, &decr_offset, 4);
+			printf("to_decrypt: %ld\n", decr_offset);
+			ft_memcpy((void *)shellcode + shell_exec->sh_offset + shell_symtab->st_value, &decr_offset, 16);
 		}
 		else if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "size"))
 		{
-			printf("size ok: to_decrypt->sh_size\n");
-			ft_memcpy(shellcode + shell_symtab->st_value, &(to_decrypt->sh_size), 4);
+			printf("SIZE: %ld\n", to_decrypt->sh_size);
+			ft_memcpy((void *)shellcode + shell_exec->sh_offset + shell_symtab->st_value, &(to_decrypt->sh_size), 8);
 		}
 		else if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "key"))
-			ft_memcpy(shellcode + shell_symtab->st_value, key, 4);
+		{
+			printf("key: %c%c %c%c %c%c %c%c %c%c %c%c %c%c %c%c \n",\
+						((unsigned char*)key)[0], ((unsigned char*)key)[1],\
+						((unsigned char*)key)[2], ((unsigned char*)key)[3],\
+						((unsigned char*)key)[4], ((unsigned char*)key)[5],\
+						((unsigned char*)key)[6], ((unsigned char*)key)[7],\
+						((unsigned char*)key)[8], ((unsigned char*)key)[9],\
+						((unsigned char*)key)[10], ((unsigned char*)key)[11],\
+						((unsigned char*)key)[12], ((unsigned char*)key)[13],\
+						((unsigned char*)key)[14], ((unsigned char*)key)[15]);
+			printf("key: 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",\
+						((unsigned char*)key)[0], ((unsigned char*)key)[1],\
+						((unsigned char*)key)[2], ((unsigned char*)key)[3],\
+						((unsigned char*)key)[4], ((unsigned char*)key)[5],\
+						((unsigned char*)key)[6], ((unsigned char*)key)[7],\
+						((unsigned char*)key)[8], ((unsigned char*)key)[9],\
+						((unsigned char*)key)[10], ((unsigned char*)key)[11],\
+						((unsigned char*)key)[12], ((unsigned char*)key)[13],\
+						((unsigned char*)key)[14], ((unsigned char*)key)[15]);
+			ft_memcpy((void*)shellcode + shell_exec->sh_offset + shell_symtab->st_value, key, 16);
+		}
 		else if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "entrypoint"))
 		{
 			decr_offset = (to_decrypt->sh_offset - code_offset - shell_symtab->st_value);
-			ft_memcpy(shellcode + shell_symtab->st_value, &decr_offset, 4);
+			ft_memcpy(shellcode + shell_exec->sh_offset + shell_symtab->st_value, &decr_offset, 8);
 		}
 		shell_symtab = (void *)shell_symtab + sizeof(Elf64_Sym);	
 	}
-	ft_memcpy(target, (void *)shellcode + shell_exec->sh_offset,shell_exec->sh_size );
+	ft_memcpy(target, (void *)shellcode + shell_exec->sh_offset, shell_exec->sh_size);
 	return (0);
 
 }
@@ -151,10 +169,10 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 	// insert new Shdr
 	insert_Shdr(woody_ptr, (void *)woody_ptr + ((Elf64_Ehdr *)woody_ptr)->e_shoff, hdr, padding_len, code_size);
 	// insert code
-	if (insert_code(to_encrypt, woody_ptr + last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, \
+	if (insert_code(to_encrypt, (void *)woody_ptr + last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, \
 				shellcode, last_Phdr->p_offset + last_Phdr->p_filesz + padding_len, key))
 		return (1);
-	((Elf64_Ehdr *)woody_ptr)->e_entry = 0x0000000000601038 + 0x33;
+	((Elf64_Ehdr *)woody_ptr)->e_entry = 0x0000000000601038 + 0x43;
 	//last_Phdr->p_offset + last_Phdr->p_filesz + padding_len;
 	// followed by code that decrypts and point to old e_entry
 	write(fd, woody_ptr, packed_size);
