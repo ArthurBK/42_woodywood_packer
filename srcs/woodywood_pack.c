@@ -85,8 +85,10 @@ int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, Elf64_Add
 		if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "to_decrypt"))
 		{		
 			decr_offset = new_ep - to_decrypt->sh_size - shell_symtab->st_value + 100;
+
 				//(new_ep + shell_symtab->st_value - to_decrypt->sh_addr);
-			printf("to_decrypt: %ld\n", decr_offset);
+			printf("to_decrypt: %ld\n", to_decrypt->sh_offset);
+			printf("to_decrypt: %ld\n", to_decrypt->sh_addr);
 			ft_memcpy((void *)shellcode + shell_exec->sh_offset + shell_symtab->st_value, &decr_offset, 16);
 		}
 		else if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "len"))
