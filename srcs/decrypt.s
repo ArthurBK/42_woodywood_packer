@@ -1,4 +1,3 @@
-GLOBAL decrypt
 SECTION .text
 
 ; void *encrypt(void *data, size_t size, void *key)
@@ -7,31 +6,26 @@ SECTION .text
 ; rdx key
 
 decrypt:
-push rbp
-mov rbp, rsp
-push rdi		; push pointer to data to stack
-
-;mov r12, rdi		; mov params
-;mov r13, rsi		; for write call
-;mov r14, rdx
-
+pushf
+push rdi
+push rsi
+push rax
+push rbx
+push rcx
+push rdx
 mov rax, 1		; write syscall
 mov rdi, 1		; stdout
 lea rsi, [rel woody_wood] ; ptr to str to write
 mov rdx, 14		; bytes to write
 syscall
 
-;mov rdi, r12		; mov params back
-;mov rsi, r13		;
-;mov rdx, r14		;
 
 movdqu xmm11, [rel key] 	; save initial key 
 call init_keys_round
-mov rcx, [rel size]
+mov rcx, [rel len]
 lea rdi, [rel to_decrypt]
 sub rdi, [rdi]
 shr rcx, 4		; divide by 16 to get loops nb
-;and rsi, 0xf
 jmp loop_str
 
 loop_str:
@@ -45,13 +39,17 @@ add rdi, 0x10
 jmp loop_str
 
 end:
+; Get back all previously saved registers / flags
+pop rdx
+pop rcx
+pop rbx
 pop rax
-lea rax, [rel entrypoint]
-add rax, [rax]
-jmp rax
-;leave
-;ret
-
+pop rsi
+pop rdi
+popf
+lea r8, [rel to_jump]
+sub r8, [r8]
+jmp r8
 
 check_modulo:
 cmp rsi, 0
@@ -151,6 +149,6 @@ ret
 
 woody_wood:	db "....WOODY....", 10, 0
 key:		db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-size:		db 0, 0, 0, 0, 0, 0, 0, 0
-entrypoint:	db 0, 0, 0, 0, 0, 0, 0, 0
+to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0
+len:		db 0, 0, 0, 0, 0, 0, 0, 0
+to_jump:	db 0, 0, 0, 0, 0, 0, 0, 0

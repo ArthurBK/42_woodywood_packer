@@ -14,14 +14,10 @@ encrypt:
 push rbp
 mov rbp, rsp
 push rdi
-push rsi
-
-mov rbx, rsp
+;push rsi
 
 movdqu xmm11, [rdx] 	; save first key
-
 call init_keys_round
-
 mov rcx, rsi
 shr rcx, 4 
 and rsi, 0xf
@@ -46,7 +42,7 @@ movdqu [rdi], xmm15
 jmp end
 
 end:
-pop rsi
+;pop rsi
 pop rax
 leave
 ret
