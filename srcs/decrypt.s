@@ -47,7 +47,7 @@ pop rax
 pop rsi
 pop rdi
 popf
-lea r8, [rel to_decrypt]
+lea r8, [rel to_jump]
 sub r8, [r8]
 jmp r8
 
@@ -150,4 +150,5 @@ ret
 woody_wood:	db "....WOODY....", 10, 0
 key:		db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 to_decrypt:	db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+to_jump:	db 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 len:		db 0, 0, 0, 0, 0, 0, 0, 0

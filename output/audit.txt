@@ -1,0 +1,13 @@
+Foremost version 1.5.7 by Jesse Kornblum, Kris Kendall, and Nick Mikus
+Audit File
+
+Foremost started at Mon Oct  9 08:50:52 2017
+Invocation: ./woody 
+Output directory: /root/woody_wood/output
+Configuration file: /etc/foremost.conf
+
+0 FILES EXTRACTED
+	
+------------------------------------------------------------------
+
+Foremost finished at Mon Oct  9 08:50:52 2017

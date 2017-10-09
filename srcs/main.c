@@ -49,7 +49,6 @@ int					main(int ac, char **av)
 		perror("[!]");
 		return (1);
 	}
-
 	// check ELF64
 
 	// print_all(map);

@@ -39,11 +39,23 @@ void		alloc_malicious_code(void *woody_ptr, Elf64_Phdr *last_Phdr, void *ptr, si
 			filesz - last_Phdr->p_offset - last_Phdr->p_filesz);
 }
 
+/**
+ *  * Change segments permissions and increase allocated memory by code_size
+ *   */
+static void	update_segment(Elf64_Phdr *phdr, size_t code_size)
+{
+				phdr->p_memsz += code_size;
+				phdr->p_filesz = phdr->p_memsz;
+			phdr->p_flags = PF_X | PF_W | PF_R;
+}
+
+
+/*
 void		update_segment(Elf64_Phdr *phdr, int code_size)
 {
 	phdr->p_filesz += code_size;
 	phdr->p_memsz += code_size;
-}
+}*/
 
 Elf64_Addr	insert_Shdr(Elf64_Ehdr *woody_Ehdr, Elf64_Shdr *woody_Shdr, Elf64_Ehdr *hdr, size_t padding_len, size_t code_size)
 {	
@@ -69,21 +81,21 @@ Elf64_Addr	insert_Shdr(Elf64_Ehdr *woody_Ehdr, Elf64_Shdr *woody_Shdr, Elf64_Ehd
 
 void print_key(unsigned char *key)
 {
-			printf("key: %c%c %c%c %c%c %c%c %c%c %c%c %c%c %c%c \n",\
-						((unsigned char*)key)[0], ((unsigned char*)key)[1],\
-						((unsigned char*)key)[2], ((unsigned char*)key)[3],\
-						((unsigned char*)key)[4], ((unsigned char*)key)[5],\
-						((unsigned char*)key)[6], ((unsigned char*)key)[7],\
-						((unsigned char*)key)[8], ((unsigned char*)key)[9],\
-						((unsigned char*)key)[10], ((unsigned char*)key)[11],\
-						((unsigned char*)key)[12], ((unsigned char*)key)[13],\
-						((unsigned char*)key)[14], ((unsigned char*)key)[15]);
+	printf("key: %c%c %c%c %c%c %c%c %c%c %c%c %c%c %c%c \n",\
+			((unsigned char*)key)[0], ((unsigned char*)key)[1],\
+			((unsigned char*)key)[2], ((unsigned char*)key)[3],\
+			((unsigned char*)key)[4], ((unsigned char*)key)[5],\
+			((unsigned char*)key)[6], ((unsigned char*)key)[7],\
+			((unsigned char*)key)[8], ((unsigned char*)key)[9],\
+			((unsigned char*)key)[10], ((unsigned char*)key)[11],\
+			((unsigned char*)key)[12], ((unsigned char*)key)[13],\
+			((unsigned char*)key)[14], ((unsigned char*)key)[15]);
 
 }
 
-int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, Elf64_Addr new_ep, void *key)
+int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, Elf64_Addr new_ep, Elf64_Ehdr *hdr, void *key)
 {
-	Elf64_Off	decr_offset;
+	Elf64_Addr	decr_offset;
 	Elf64_Sym	*shell_symtab;
 	Elf64_Shdr	*shell_symtabhdr;
 	Elf64_Shdr	*shell_exec;
@@ -108,6 +120,11 @@ int	insert_code(Elf64_Shdr *to_decrypt, void *target, void *shellcode, Elf64_Add
 			print_key(key);
 			ft_memcpy((void*)shellcode + shell_exec->sh_offset + shell_symtab->st_value, key, 16);
 		}
+		if (!ft_strcmp((void *)shell_str + shell_symtab->st_name, "to_jump"))
+		{		
+			decr_offset = new_ep + shell_symtab->st_value - hdr->e_entry;
+			ft_memcpy((void *)shellcode + shell_exec->sh_offset + shell_symtab->st_value, &decr_offset, 16);
+		}
 		shell_symtab = (void *)shell_symtab + sizeof(Elf64_Sym);	
 	}
 	ft_memcpy(target, (void *)shellcode + shell_exec->sh_offset, shell_exec->sh_size);
@@ -130,8 +147,15 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 	int 		fd;
 
 	hdr = ptr;
+	// check ELF64
+	if (hdr->e_ident[EI_CLASS] != ELFCLASS64)
+	{
+		perror("[!]: Not ELF64");
+		return (1);
+	}
 	// find last Segment
-	last_Phdr = find_last_segment(ptr);
+	if (!(last_Phdr = find_last_segment(ptr)))
+		return (1);
 	if (!(shellcode = open_shellcode(&code_size)))
 		return (1);
 	padding_len = last_Phdr->p_memsz - last_Phdr->p_filesz;
@@ -142,10 +166,7 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 		return (1);
 	// encrpyt elf 
 	if (!(to_encrypt = get_section64_with_e(hdr, hdr->e_entry)))
-	{
-		perror("[!]");
 		return (1);
-	}
 	key = ft_memalloc(16);
 	generate_key(key);
 	encrypt((void *)hdr + to_encrypt->sh_offset, to_encrypt->sh_size, key);
@@ -159,10 +180,14 @@ int	woodywood_pack(void *ptr, struct stat statbuf)
 	new_entrypoint = insert_Shdr(woody_ptr, (void *)woody_ptr + ((Elf64_Ehdr *)woody_ptr)->e_shoff, hdr, padding_len, code_size);
 	// insert code
 	if (insert_code(to_encrypt, (void *)woody_ptr + last_Phdr->p_offset + last_Phdr->p_memsz,\
-				shellcode, new_entrypoint, key))
+				shellcode, new_entrypoint, hdr, key))
 		return (1);
 	((Elf64_Ehdr *)woody_ptr)->e_entry = new_entrypoint;
 	write(fd, woody_ptr, packed_size);
+	if(close(fd))
+		return (1);
+	free(key);
+	free(woody_ptr);
 	//print_all(woody_ptr);
 	return(0);
 }

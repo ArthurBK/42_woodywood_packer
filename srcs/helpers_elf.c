@@ -8,6 +8,7 @@ Elf64_Phdr	*find_last_segment(void *ptr)
 	int i;
 
 	hdr = ptr;
+	last_Phdr = NULL;
 	phdr = (void *)hdr + hdr->e_phoff;
 	for (i = 0; i < hdr->e_phnum; ++i)
 	{
